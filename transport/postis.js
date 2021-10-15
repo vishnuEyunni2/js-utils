@@ -34,9 +34,10 @@ function Postis(options) {
   var listenBuffer = {};
   var ready = false;
   var readyMethod = "__ready__";
+  var messageMethod = "message";
   var readynessCheck;
 
-  var listener = function(event) {
+  var listener = function (event) {
     var data;
     try {
       data = JSON.parse(event.data);
@@ -45,7 +46,7 @@ function Postis(options) {
     }
 
     if (allowedOrigin && event.origin !== allowedOrigin) {
-        return;
+      return;
     }
 
     if (data && data.postis && data.scope === scope) {
@@ -82,7 +83,7 @@ function Postis(options) {
 
     send: function (opts) {
       var method = opts.method;
-
+      
       if ((ready || opts.method === readyMethod) && (targetWindow && typeof targetWindow.postMessage === "function")) {
         targetWindow.postMessage(JSON.stringify({
           postis: true,
@@ -91,6 +92,15 @@ function Postis(options) {
           params: opts.params
         }), "*");
       } else {
+        var isAllowedEvent = opts.params.data.isAllowedEvent;
+        if (targetWindow !== window.self && opts.method === messageMethod && opts.params.type === "event" && isAllowedEvent) {
+          targetWindow.postMessage(JSON.stringify({
+            postis: true,
+            scope: scope,
+            method: method,
+            params: opts.params
+          }), "*");
+        }
         sendBuffer.push(opts);
       }
     },
